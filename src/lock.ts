@@ -122,6 +122,7 @@ DO NOT TOUCH this branch manually.
   }
 
   async unlock(): Promise<void> {
+    await this.init()
     await this.git('fetch', 'origin', this.branch)
     await this.git('checkout', `origin/${this.branch}`)
     const rawState = await fs.readFile(path.join(this.local, 'state.json'))
