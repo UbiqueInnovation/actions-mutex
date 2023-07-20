@@ -5,8 +5,6 @@ import {promises as fs} from 'fs'
 import * as path from 'path'
 import * as utils from './utils'
 
-const serverUrl = process.env['GITHUB_SERVER_URL'] || 'https://github.com'
-
 export interface lockOptions {
   token?: string
   key: string
@@ -41,10 +39,6 @@ class Locker {
     const key = options.key
     const branch = state ? state.branch : options.prefix + options.key
     let origin = state ? state.origin : options.repository
-    if (/^[^/]+\/[^/]+$/.test(origin)) {
-      // it looks that GitHub repository
-      origin = `${serverUrl}/${origin}`
-    }
     return new Locker(owner, local, branch, origin, key)
   }
 
@@ -52,13 +46,6 @@ class Locker {
     await this.git('init', this.local)
     await this.git('config', '--local', 'core.autocrlf', 'false')
     await this.git('remote', 'add', 'origin', this.origin)
-
-    if (token) {
-      // configure authorize header
-      const auth = Buffer.from(`x-oauth-basic:${token}`).toString('base64')
-      core.setSecret(auth) // make sure it's secret
-      await this.git('config', '--local', `http.${serverUrl}/.extraheader`, `AUTHORIZATION: basic ${auth}`)
-    }
   }
 
   async lock(token?: string): Promise<lockState> {
