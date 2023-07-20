@@ -1,10 +1,6 @@
 name: 'actions-mutex'
 description: 'A GitHub Action for exclusive control'
 inputs:
-  token:
-    description: 'GitHub Token. It must have a write access to the repository.'
-    required: true
-    default: '${{ github.token }}'
   key:
     description: 'The name of the critical section'
     required: true

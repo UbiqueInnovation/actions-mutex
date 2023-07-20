@@ -6,7 +6,6 @@ import * as path from 'path'
 import * as utils from './utils'
 
 export interface lockOptions {
-  token?: string
   key: string
   repository: string
   prefix: string
@@ -42,14 +41,14 @@ class Locker {
     return new Locker(owner, local, branch, origin, key)
   }
 
-  async init(token?: string): Promise<void> {
+  async init(): Promise<void> {
     await this.git('init', this.local)
     await this.git('config', '--local', 'core.autocrlf', 'false')
     await this.git('remote', 'add', 'origin', this.origin)
   }
 
-  async lock(token?: string): Promise<lockState> {
-    await this.init(token)
+  async lock(): Promise<lockState> {
+    await this.init()
 
     // generate files
     let data = `# Lock File for actions-mutex
@@ -62,7 +61,7 @@ DO NOT TOUCH this branch manually.
     const currentRepository = process.env['GITHUB_REPOSITORY']
     const currentRunId = process.env['GITHUB_RUN_ID']
     if (currentRepository && currentRunId) {
-      data += `- Workflow: [Workflow](${serverUrl}/${currentRepository}/actions/runs/${currentRunId})`
+      data += `- Workflow: [Workflow](${currentRepository}/actions/runs/${currentRunId})`
       data += '\n'
     }
     await fs.writeFile(path.join(this.local, 'README.md'), data)
@@ -122,8 +121,7 @@ DO NOT TOUCH this branch manually.
     throw new Error('failed to git push: ' + code)
   }
 
-  async unlock(token?: string): Promise<void> {
-    await this.init(token)
+  async unlock(): Promise<void> {
     await this.git('fetch', 'origin', this.branch)
     await this.git('checkout', `origin/${this.branch}`)
     const rawState = await fs.readFile(path.join(this.local, 'state.json'))
@@ -148,10 +146,10 @@ DO NOT TOUCH this branch manually.
 
 export async function lock(options: lockOptions): Promise<lockState> {
   const locker = await Locker.create(options)
-  return locker.lock(options.token)
+  return locker.lock()
 }
 
 export async function unlock(options: lockOptions, state: lockState): Promise<void> {
   const locker = await Locker.create(options, state)
-  return locker.unlock(options.token)
+  return locker.unlock()
 }
